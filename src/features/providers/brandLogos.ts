@@ -2,6 +2,7 @@ import claudeLogo from '@/assets/icons/claude.svg';
 import codexLogo from '@/assets/icons/codex.svg';
 import geminiLogo from '@/assets/icons/gemini.svg';
 import openaiLogo from '@/assets/icons/openai-light.svg';
+import qoderLogo from '@/assets/icons/qoder.svg';
 import vertexLogo from '@/assets/icons/vertex.svg';
 import type { ProviderBrand } from './types';
 
@@ -16,5 +17,5 @@ export const PROVIDER_LOGOS: Record<ProviderBrand, ProviderBrandLogo> = {
   codex: { src: codexLogo },
   vertex: { src: vertexLogo },
   openaiCompatibility: { src: openaiLogo, invertOnDark: true },
-  qoder: { src: openaiLogo, invertOnDark: true },
+  qoder: { src: qoderLogo },
 };
