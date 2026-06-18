@@ -3,12 +3,15 @@ import iconAntigravity from '@/assets/icons/antigravity.svg';
 import iconClaude from '@/assets/icons/claude.svg';
 import iconCodex from '@/assets/icons/codex.svg';
 import iconGemini from '@/assets/icons/gemini.svg';
+import iconGrok from '@/assets/icons/grok.svg';
+import iconGrokDark from '@/assets/icons/grok-dark.svg';
 import iconIflow from '@/assets/icons/iflow.svg';
 import iconKimiDark from '@/assets/icons/kimi-dark.svg';
 import iconKimiLight from '@/assets/icons/kimi-light.svg';
 import iconQwen from '@/assets/icons/qwen.svg';
 import iconVertex from '@/assets/icons/vertex.svg';
 import type { AuthFileItem } from '@/types';
+import { normalizeOAuthProviderKey } from '@/utils/providerKeys';
 import { parseTimestamp } from '@/utils/timestamp';
 
 export type ThemeColors = { bg: string; text: string; border?: string };
@@ -22,7 +25,7 @@ export type AuthFileModelItem = {
 };
 export type AuthFileIconAsset = string | { light: string; dark: string };
 
-export type QuotaProviderType = 'antigravity' | 'claude' | 'codex' | 'gemini-cli' | 'kimi';
+export type QuotaProviderType = 'antigravity' | 'claude' | 'codex' | 'gemini-cli' | 'kimi' | 'xai';
 
 export const QUOTA_PROVIDER_TYPES = new Set<QuotaProviderType>([
   'antigravity',
@@ -30,7 +33,21 @@ export const QUOTA_PROVIDER_TYPES = new Set<QuotaProviderType>([
   'codex',
   'gemini-cli',
   'kimi',
+  'xai',
 ]);
+
+export const OAUTH_PROVIDER_PRESETS = [
+  'gemini-cli',
+  'vertex',
+  'aistudio',
+  'antigravity',
+  'xai',
+  'claude',
+  'codex',
+  'kimi',
+];
+
+const OAUTH_PROVIDER_EXCLUDES = new Set(['all', 'unknown', 'empty']);
 
 export const MIN_CARD_PAGE_SIZE = 3;
 export const MAX_CARD_PAGE_SIZE = 30;
@@ -82,6 +99,11 @@ export const TYPE_COLORS: Record<string, TypeColorSet> = {
     light: { bg: '#e0f7fa', text: '#006064' },
     dark: { bg: '#004d40', text: '#80deea' },
   },
+  // xAI / Grok: graphite brand treatment, distinct from blue and purple providers
+  xai: {
+    light: { bg: '#f3f4f6', text: '#111827', border: '1px solid #d1d5db' },
+    dark: { bg: '#111827', text: '#f9fafb', border: '1px solid #374151' },
+  },
   // iFlow logo: 品红紫渐变 #5C5CFF → #AE5CFF，偏品红以区别于 Qwen 的紫罗兰
   iflow: {
     light: { bg: '#f5e3fc', text: '#9025c8' },
@@ -109,6 +131,7 @@ export const AUTH_FILE_ICONS: Record<string, AuthFileIconAsset> = {
   codex: iconCodex,
   gemini: iconGemini,
   'gemini-cli': iconGemini,
+  xai: { light: iconGrok, dark: iconGrokDark },
   iflow: iconIflow,
   kimi: { light: iconKimiLight, dark: iconKimiDark },
   qwen: iconQwen,
@@ -128,7 +151,24 @@ export const resolveQuotaErrorMessage = (
   return fallback;
 };
 
-export const normalizeProviderKey = (value: string) => value.trim().toLowerCase();
+export const normalizeProviderKey = normalizeOAuthProviderKey;
+
+export const buildOAuthProviderOptions = (values: Iterable<unknown>): string[] => {
+  const extraProviders = new Set<string>();
+
+  Array.from(values).forEach((value) => {
+    const key = normalizeProviderKey(String(value ?? ''));
+    if (!key || OAUTH_PROVIDER_EXCLUDES.has(key)) return;
+    extraProviders.add(key);
+  });
+
+  const baseSet = new Set(OAUTH_PROVIDER_PRESETS.map((value) => normalizeProviderKey(value)));
+  const extraList = Array.from(extraProviders)
+    .filter((value) => !baseSet.has(value))
+    .sort((a, b) => a.localeCompare(b));
+
+  return [...OAUTH_PROVIDER_PRESETS, ...extraList];
+};
 
 export const getAuthFileStatusMessage = (file: AuthFileItem): string => {
   const raw = file['status_message'] ?? file.statusMessage;
@@ -141,15 +181,16 @@ export const hasAuthFileStatusMessage = (file: AuthFileItem): boolean =>
   getAuthFileStatusMessage(file).length > 0;
 
 export const getTypeLabel = (t: TFunction, type: string): string => {
-  const key = `auth_files.filter_${type}`;
+  const providerKey = normalizeProviderKey(type);
+  const key = `auth_files.filter_${providerKey}`;
   const translated = t(key);
   if (translated !== key) return translated;
-  if (type.toLowerCase() === 'iflow') return 'iFlow';
+  if (providerKey === 'iflow') return 'iFlow';
   return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
 export const getTypeColor = (type: string, resolvedTheme: ResolvedTheme): ThemeColors => {
-  const set = TYPE_COLORS[type] || TYPE_COLORS.unknown;
+  const set = TYPE_COLORS[normalizeProviderKey(type)] || TYPE_COLORS.unknown;
   return resolvedTheme === 'dark' && set.dark ? set.dark : set.light;
 };
 
@@ -208,7 +249,7 @@ export const parseDisableCoolingValue = (value: unknown): boolean | undefined =>
 };
 
 export const readCodexAuthFileWebsockets = (value: Record<string, unknown>): boolean =>
-  parseDisableCoolingValue(value.websockets) ?? false;
+  parseDisableCoolingValue(value.websockets ?? value.websocket) ?? false;
 
 export const applyCodexAuthFileWebsockets = (
   value: Record<string, unknown>,
@@ -234,7 +275,7 @@ export const formatModified = (item: AuthFileItem): string => {
   const date =
     Number.isFinite(asNumber) && !Number.isNaN(asNumber)
       ? new Date(asNumber < 1e12 ? asNumber * 1000 : asNumber)
-      : parseTimestamp(raw) ?? new Date(String(raw));
+      : (parseTimestamp(raw) ?? new Date(String(raw)));
   return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString();
 };
 
