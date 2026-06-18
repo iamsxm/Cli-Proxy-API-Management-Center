@@ -73,7 +73,7 @@ const getResourceRecentSuccess = (
   resource: ProviderResource,
   usageByProvider: ProviderRecentUsageMap
 ): number => {
-  if (resource.brand === 'openaiCompatibility') {
+  if (resource.brand === 'openaiCompatibility' || resource.brand === 'qoder') {
     return getOpenAIProviderRecentWindowStats(
       resource.raw as OpenAIProviderConfig,
       usageByProvider

@@ -235,6 +235,9 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
         case 'openai-compatibility':
           nextConfig.openaiCompatibility = value as Config['openaiCompatibility'];
           break;
+        case 'qoder':
+          nextConfig.qoder = value as Config['qoder'];
+          break;
         case 'oauth-excluded-models':
           nextConfig.oauthExcludedModels = value as Config['oauthExcludedModels'];
           break;

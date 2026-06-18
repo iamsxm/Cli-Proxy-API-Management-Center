@@ -217,11 +217,14 @@ const normalizeGeminiKeyConfig = (item: unknown): GeminiKeyConfig | null => {
   return config;
 };
 
-const normalizeOpenAIProvider = (provider: unknown): OpenAIProviderConfig | null => {
+const normalizeOpenAIProvider = (
+  provider: unknown,
+  options: { allowEmptyBaseUrl?: boolean } = {}
+): OpenAIProviderConfig | null => {
   if (!isRecord(provider)) return null;
   const name = provider.name;
   const baseUrl = provider['base-url'];
-  if (!name || !baseUrl) return null;
+  if (!name || (!baseUrl && !options.allowEmptyBaseUrl)) return null;
 
   const apiKeyEntries = Array.isArray(provider['api-key-entries'])
     ? (provider['api-key-entries']
@@ -236,7 +239,7 @@ const normalizeOpenAIProvider = (provider: unknown): OpenAIProviderConfig | null
 
   const result: OpenAIProviderConfig = {
     name: String(name),
-    baseUrl: String(baseUrl),
+    baseUrl: baseUrl ? String(baseUrl) : '',
     apiKeyEntries
   };
 
@@ -362,7 +365,7 @@ export const normalizeConfigResponse = (raw: unknown): Config => {
   const qoderList = raw.qoder;
   if (Array.isArray(qoderList)) {
     config.qoder = qoderList
-      .map((item) => normalizeOpenAIProvider(item))
+      .map((item) => normalizeOpenAIProvider(item, { allowEmptyBaseUrl: true }))
       .filter(Boolean) as OpenAIProviderConfig[];
   }
 

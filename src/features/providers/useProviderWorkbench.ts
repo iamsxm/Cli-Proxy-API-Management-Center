@@ -16,6 +16,7 @@ import {
   codexToResource,
   geminiToResource,
   openaiToResource,
+  qoderToResource,
   vertexToResource,
 } from './adapters';
 import { PROVIDER_BRAND_ORDER } from './descriptors';
@@ -83,7 +84,7 @@ const buildExcludedModels = (
 ): string[] | undefined => {
   const list = parseTextList(textValue);
   const filtered = list.filter((v) => v !== '*');
-  if (brand === 'openaiCompatibility') {
+  if (brand === 'openaiCompatibility' || brand === 'qoder') {
     return filtered.length ? filtered : undefined;
   }
   if (disabled) {
@@ -205,10 +206,11 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
     setIsFetching(true);
     setErrorMessage(null);
     try {
-      const [configResult, vertexResult, openaiResult] = await Promise.allSettled([
+      const [configResult, vertexResult, openaiResult, qoderResult] = await Promise.allSettled([
         fetchConfig(undefined, true),
         providersApi.getVertexConfigs(),
         providersApi.getOpenAIProviders(),
+        providersApi.getQoderProviders(),
       ]);
       if (configResult.status !== 'fulfilled') {
         throw configResult.reason;
@@ -218,6 +220,9 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
       }
       if (openaiResult.status === 'fulfilled') {
         updateConfigValue('openai-compatibility', openaiResult.value || []);
+      }
+      if (qoderResult.status === 'fulfilled') {
+        updateConfigValue('qoder', qoderResult.value || []);
       }
       setFetchedAt(new Date().toISOString());
     } catch (err) {
@@ -260,6 +265,9 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
           break;
         case 'openaiCompatibility':
           resources = (config.openaiCompatibility ?? []).map((c, i) => openaiToResource(c, i));
+          break;
+        case 'qoder':
+          resources = (config.qoder ?? []).map((c, i) => qoderToResource(c, i));
           break;
       }
       return {
@@ -315,6 +323,14 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
     [updateConfigValue]
   );
 
+  const persistQoderConfigs = useCallback(
+    async (next: OpenAIProviderConfig[]) => {
+      await providersApi.saveQoderProviders(next);
+      updateConfigValue('qoder', next);
+    },
+    [updateConfigValue]
+  );
+
   const createProvider = useCallback(
     async (brand: ProviderBrand, input: ProviderEntryFormInput) => {
       setMutating(true);
@@ -339,6 +355,10 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
           const next = [...(config?.openaiCompatibility ?? [])];
           next.push(buildOpenAIConfig(input));
           await persistOpenAIConfigs(next);
+        } else if (brand === 'qoder') {
+          const next = [...(config?.qoder ?? [])];
+          next.push(buildOpenAIConfig({ ...input, name: input.name.trim() || 'qoder' }));
+          await persistQoderConfigs(next);
         }
         refreshSnapshot();
       } finally {
@@ -351,6 +371,7 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
       persistCodexConfigs,
       persistGeminiKeys,
       persistOpenAIConfigs,
+      persistQoderConfigs,
       persistVertexConfigs,
       refreshSnapshot,
     ]
@@ -387,6 +408,11 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
           const existing = list[idx];
           list[idx] = buildOpenAIConfig(input, existing);
           await persistOpenAIConfigs(list);
+        } else if (brand === 'qoder') {
+          const list = [...(config?.qoder ?? [])];
+          const existing = list[idx];
+          list[idx] = buildOpenAIConfig({ ...input, name: input.name.trim() || 'qoder' }, existing);
+          await persistQoderConfigs(list);
         }
         refreshSnapshot();
       } finally {
@@ -399,6 +425,7 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
       persistCodexConfigs,
       persistGeminiKeys,
       persistOpenAIConfigs,
+      persistQoderConfigs,
       persistVertexConfigs,
       refreshSnapshot,
     ]
@@ -429,6 +456,10 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
           await providersApi.deleteOpenAIProvider(sel.index);
           const next = (config?.openaiCompatibility ?? []).filter((_, i) => i !== sel.index);
           updateConfigValue('openai-compatibility', next);
+        } else if (sel.brand === 'qoder') {
+          await providersApi.deleteQoderProviderByIndex(sel.index);
+          const next = (config?.qoder ?? []).filter((_, i) => i !== sel.index);
+          updateConfigValue('qoder', next);
         }
         refreshSnapshot();
       } finally {
@@ -477,6 +508,14 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
           if (current) {
             list[idx] = { ...current, disabled };
             updateConfigValue('openai-compatibility', list);
+          }
+        } else if (brand === 'qoder') {
+          await providersApi.updateQoderProviderDisabled(idx, disabled);
+          const list = [...(config?.qoder ?? [])];
+          const current = list[idx];
+          if (current) {
+            list[idx] = { ...current, disabled };
+            updateConfigValue('qoder', list);
           }
         }
         refreshSnapshot();

@@ -16,4 +16,5 @@ export const PROVIDER_LOGOS: Record<ProviderBrand, ProviderBrandLogo> = {
   codex: { src: codexLogo },
   vertex: { src: vertexLogo },
   openaiCompatibility: { src: openaiLogo, invertOnDark: true },
+  qoder: { src: openaiLogo, invertOnDark: true },
 };

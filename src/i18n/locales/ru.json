@@ -1431,7 +1431,8 @@
       "codex": "Codex",
       "claude": "Claude",
       "vertex": "Vertex",
-      "openaiCompatibility": "OpenAI-совместимый"
+      "openaiCompatibility": "OpenAI-совместимый",
+      "qoder": "Qoder"
     },
     "table": {
       "key": "Ключ",

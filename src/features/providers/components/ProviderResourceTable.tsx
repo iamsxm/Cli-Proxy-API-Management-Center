@@ -47,7 +47,7 @@ const resolveStatusBarData = (
   resource: ProviderResource,
   usageByProvider: ProviderRecentUsageMap
 ): StatusBarData => {
-  if (resource.brand === 'openaiCompatibility') {
+  if (resource.brand === 'openaiCompatibility' || resource.brand === 'qoder') {
     return getOpenAIProviderRecentStatusData(
       resource.raw as OpenAIProviderConfig,
       usageByProvider
@@ -65,7 +65,7 @@ const resolveTotalStats = (
   resource: ProviderResource,
   usageByProvider: ProviderRecentUsageMap
 ): { success: number; failure: number } => {
-  if (resource.brand === 'openaiCompatibility') {
+  if (resource.brand === 'openaiCompatibility' || resource.brand === 'qoder') {
     return getOpenAIProviderTotalStats(
       resource.raw as OpenAIProviderConfig,
       usageByProvider
@@ -106,7 +106,7 @@ export function ProviderResourceTable({
 
   const renderModelsSummary = (r: ProviderResource) => {
     const items: ReactNode[] = [];
-    if (r.brand === 'openaiCompatibility') {
+    if (r.brand === 'openaiCompatibility' || r.brand === 'qoder') {
       items.push(
         renderMetric('models', t('providersPage.table.metrics.models'), r.modelCount),
         renderMetric('keys', t('providersPage.table.metrics.keys'), r.apiKeyEntryCount),
@@ -145,7 +145,7 @@ export function ProviderResourceTable({
   };
 
   const renderPrimary = (r: ProviderResource) => {
-    if (r.brand === 'openaiCompatibility') {
+    if (r.brand === 'openaiCompatibility' || r.brand === 'qoder') {
       const extra = r.apiKeyEntryCount > 1 ? ` · +${r.apiKeyEntryCount - 1}` : '';
       return (
         <div className={styles.primaryCell}>

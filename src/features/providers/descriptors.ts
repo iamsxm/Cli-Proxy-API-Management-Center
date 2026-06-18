@@ -117,6 +117,25 @@ export const PROVIDER_DESCRIPTORS: Record<ProviderBrand, ProviderDescriptor> = {
     supportsApiKeyEntries: true,
     sheetSize: 'lg',
   },
+  qoder: {
+    id: 'qoder',
+    supportsName: true,
+    supportsApiKey: false,
+    supportsDisabled: true,
+    supportsBaseUrl: false,
+    baseUrlRequired: false,
+    supportsProxyUrl: false,
+    supportsPrefix: true,
+    supportsModels: true,
+    supportsHeaders: false,
+    supportsExcludedModels: false,
+    supportsPriority: true,
+    supportsTestModel: true,
+    supportsWebsockets: false,
+    supportsCloak: false,
+    supportsApiKeyEntries: true,
+    sheetSize: 'lg',
+  },
 };
 
 export const PROVIDER_BRAND_ORDER: ProviderBrand[] = [
@@ -125,4 +144,5 @@ export const PROVIDER_BRAND_ORDER: ProviderBrand[] = [
   'claude',
   'vertex',
   'openaiCompatibility',
+  'qoder',
 ];

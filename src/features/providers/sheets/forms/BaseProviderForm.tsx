@@ -69,7 +69,7 @@ function buildInitialForm(
   if (mode === 'create' || !resource) {
     return {
       apiKey: '',
-      name: '',
+      name: brand === 'qoder' ? 'qoder' : '',
       baseUrl: '',
       proxyUrl: '',
       prefix: '',
@@ -87,21 +87,23 @@ function buildInitialForm(
       experimentalCchSigning: brand === 'claude' ? false : undefined,
       testModel:
         brand === 'openaiCompatibility' ||
+        brand === 'qoder' ||
         brand === 'codex' ||
         brand === 'claude' ||
         brand === 'gemini'
           ? ''
           : undefined,
-      apiKeyEntries: brand === 'openaiCompatibility' ? [emptyApiKeyEntry()] : undefined,
+      apiKeyEntries:
+        brand === 'openaiCompatibility' || brand === 'qoder' ? [emptyApiKeyEntry()] : undefined,
     };
   }
 
   const raw = resource.raw;
-  if (brand === 'openaiCompatibility') {
+  if (brand === 'openaiCompatibility' || brand === 'qoder') {
     const cfg = raw as OpenAIProviderConfig;
     return {
       apiKey: '',
-      name: cfg.name ?? '',
+      name: cfg.name ?? (brand === 'qoder' ? 'qoder' : ''),
       baseUrl: cfg.baseUrl ?? '',
       proxyUrl: '',
       prefix: cfg.prefix ?? '',
@@ -250,7 +252,7 @@ export function BaseProviderForm({
 
   const fallbackApiKey = useMemo(() => {
     if (mode !== 'edit' || !resource) return '';
-    if (brand === 'openaiCompatibility') return '';
+    if (brand === 'openaiCompatibility' || brand === 'qoder') return '';
     return (resource.raw as { apiKey?: string } | undefined)?.apiKey ?? '';
   }, [brand, mode, resource]);
 
@@ -448,8 +450,10 @@ export function BaseProviderForm({
     brand === 'gemini' ||
     brand === 'codex' ||
     brand === 'claude' ||
-    brand === 'openaiCompatibility';
-  const supportsOpenAIModelOptions = brand === 'openaiCompatibility';
+    brand === 'openaiCompatibility' ||
+    brand === 'qoder';
+  const supportsOpenAIModelOptions = brand === 'openaiCompatibility' || brand === 'qoder';
+  const supportsApiKeyConnectivity = brand === 'openaiCompatibility';
   const singleConnectivity =
     brand === 'codex'
       ? { status: connectivity.codexStatus, run: connectivity.runCodex }
@@ -750,46 +754,53 @@ export function BaseProviderForm({
                 <IconPlus size={12} />
                 <span>{t('providersPage.form.addApiKeyEntry')}</span>
               </button>
-              {/* Test all button on the right */}
-              <button
-                type="button"
-                className={styles.connectivityBtn}
-                disabled={mutating || connectivity.isTestingAny}
-                onClick={() => void connectivity.runOpenAIAllKeys()}
-              >
-                {connectivity.isTestingAny ? (
-                  <span className={`${styles.statusIcon} ${styles.statusIconLoading}`}>
-                    <IconLoader2 size={14} />
-                  </span>
-                ) : null}
-                <span>{t('providersPage.connectivity.testAll')}</span>
-              </button>
+              {supportsApiKeyConnectivity ? (
+                <button
+                  type="button"
+                  className={styles.connectivityBtn}
+                  disabled={mutating || connectivity.isTestingAny}
+                  onClick={() => void connectivity.runOpenAIAllKeys()}
+                >
+                  {connectivity.isTestingAny ? (
+                    <span className={`${styles.statusIcon} ${styles.statusIconLoading}`}>
+                      <IconLoader2 size={14} />
+                    </span>
+                  ) : null}
+                  <span>{t('providersPage.connectivity.testAll')}</span>
+                </button>
+              ) : null}
             </div>
             {[...apiKeyEntries].reverse().map((entry, visualIdx) => {
               const realIdx = apiKeyEntries.length - 1 - visualIdx;
-              const status = connectivity.openaiStatuses[realIdx] ?? {
-                state: 'idle' as ConnectivityState,
-                message: '',
-              };
+              const status = supportsApiKeyConnectivity
+                ? (connectivity.openaiStatuses[realIdx] ?? {
+                    state: 'idle' as ConnectivityState,
+                    message: '',
+                  })
+                : { state: 'idle' as ConnectivityState, message: '' };
               return (
                 <div key={realIdx} className={styles.entryCard}>
                   <div className={styles.entryCardHeader}>
                     <span>{t('providersPage.form.apiKeyEntry', { index: realIdx + 1 })}</span>
                     <div className={styles.entryCardHeaderRight}>
-                      <ConnectivityStatusIcon state={status.state} />
-                      <button
-                        type="button"
-                        className={styles.connectivityBtnGhost}
-                        disabled={mutating || status.state === 'loading'}
-                        onClick={() => void connectivity.runOpenAIKey(realIdx)}
-                      >
-                        {status.state === 'loading' ? (
-                          <span className={`${styles.statusIcon} ${styles.statusIconLoading}`}>
-                            <IconLoader2 size={14} />
-                          </span>
-                        ) : null}
-                        <span>{t('providersPage.connectivity.test')}</span>
-                      </button>
+                      {supportsApiKeyConnectivity ? (
+                        <>
+                          <ConnectivityStatusIcon state={status.state} />
+                          <button
+                            type="button"
+                            className={styles.connectivityBtnGhost}
+                            disabled={mutating || status.state === 'loading'}
+                            onClick={() => void connectivity.runOpenAIKey(realIdx)}
+                          >
+                            {status.state === 'loading' ? (
+                              <span className={`${styles.statusIcon} ${styles.statusIconLoading}`}>
+                                <IconLoader2 size={14} />
+                              </span>
+                            ) : null}
+                            <span>{t('providersPage.connectivity.test')}</span>
+                          </button>
+                        </>
+                      ) : null}
                       <button
                         type="button"
                         className={styles.removeBtn}
@@ -867,7 +878,7 @@ export function BaseProviderForm({
                       placeholder="http://127.0.0.1:7890"
                     />
                   </div>
-                  {status.state === 'error' ? (
+                  {supportsApiKeyConnectivity && status.state === 'error' ? (
                     <div className={styles.connectivityError}>{status.message}</div>
                   ) : null}
                 </div>

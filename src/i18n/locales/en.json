@@ -1454,7 +1454,8 @@
       "codex": "Codex",
       "claude": "Claude",
       "vertex": "Vertex",
-      "openaiCompatibility": "OpenAI Compatible"
+      "openaiCompatibility": "OpenAI Compatible",
+      "qoder": "Qoder"
     },
     "table": {
       "key": "Key",

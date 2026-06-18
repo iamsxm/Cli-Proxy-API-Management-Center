@@ -7,7 +7,8 @@ export type ProviderBrand =
   | 'codex'
   | 'claude'
   | 'vertex'
-  | 'openaiCompatibility';
+  | 'openaiCompatibility'
+  | 'qoder';
 
 export const PROVIDER_SORT_BY_VALUES = ['name', 'priority', 'recent-success'] as const;
 export type ProviderSortBy = (typeof PROVIDER_SORT_BY_VALUES)[number];
@@ -20,7 +21,8 @@ export type ProviderResourceSelector =
   | { brand: 'codex'; apiKey: string; baseUrl?: string; index: number }
   | { brand: 'claude'; apiKey: string; baseUrl?: string; index: number }
   | { brand: 'vertex'; apiKey: string; baseUrl?: string; index: number }
-  | { brand: 'openaiCompatibility'; name: string; index: number };
+  | { brand: 'openaiCompatibility'; name: string; index: number }
+  | { brand: 'qoder'; name: string; index: number };
 
 export interface ProviderResourceFlags {
   cloakEnabled?: boolean;
@@ -77,7 +79,7 @@ export interface ProviderSnapshot {
 
 /**
  * 通用 Sheet 表单值。
- * Gemini/Codex/Claude/Vertex/OpenAI 共用基础字段,各自启用 advanced 区。
+ * Gemini/Codex/Claude/Vertex/OpenAI/Qoder 共用基础字段,各自启用 advanced 区。
  */
 export interface ModelEntryInput {
   name: string;
@@ -103,9 +105,9 @@ export interface CloakInput {
 }
 
 export interface ProviderEntryFormInput {
-  /** OpenAI 创建时只在 apiKeyEntries 中传 */
+  /** OpenAI/Qoder 创建时只在 apiKeyEntries 中传 */
   apiKey: string;
-  /** OpenAI 必填,其余 brand 不展示 */
+  /** OpenAI/Qoder provider 名称,Qoder 默认使用 qoder */
   name: string;
   baseUrl: string;
   proxyUrl: string;
@@ -124,7 +126,7 @@ export interface ProviderEntryFormInput {
   /** Claude 专属 */
   cloak?: CloakInput;
   experimentalCchSigning?: boolean;
-  /** OpenAI persists this; Gemini/Claude use it for one-off connectivity tests. */
+  /** OpenAI/Qoder persists this; Gemini/Claude use it for one-off connectivity tests. */
   testModel?: string;
   apiKeyEntries?: ApiKeyEntryInput[];
 }

@@ -526,11 +526,22 @@ export const providersApi = {
   async getQoderProviders(): Promise<OpenAIProviderConfig[]> {
     const data = await apiClient.get('/qoder');
     const list = extractArrayPayload(data, 'qoder');
-    return list.map((item) => normalizeOpenAIProvider(item)).filter(Boolean) as OpenAIProviderConfig[];
+    return list
+      .map((item) => normalizeOpenAIProvider(item, { allowEmptyBaseUrl: true }))
+      .filter(Boolean) as OpenAIProviderConfig[];
   },
 
-  saveQoderProviders: (providers: OpenAIProviderConfig[]) =>
-    apiClient.put('/qoder', providers.map((item) => serializeOpenAIProvider(item))),
+  saveQoderProviders: async (providers: OpenAIProviderConfig[]) =>
+    apiClient.put(
+      '/qoder',
+      await buildPreservedList(
+        'qoder',
+        providers,
+        serializeOpenAIProvider,
+        mergeOpenAIProviderPayload,
+        openAIProviderIdentity
+      )
+    ),
 
   updateQoderProvider: (index: number, value: OpenAIProviderConfig) =>
     apiClient.patch('/qoder', { index, value: serializeOpenAIProvider(value) }),

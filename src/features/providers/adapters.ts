@@ -130,3 +130,35 @@ export function openaiToResource(
     raw: config,
   };
 }
+
+export function qoderToResource(
+  config: OpenAIProviderConfig,
+  index: number
+): ProviderResource {
+  const name = (config.name ?? '').trim() || 'qoder';
+  const firstEntry = config.apiKeyEntries?.[0];
+  const previewApiKey = firstEntry?.apiKey ? maskApiKey(firstEntry.apiKey) : null;
+  return {
+    id: buildId('qoder', index, truncateForId(name) || `#${index}`),
+    brand: 'qoder',
+    originalIndex: index,
+    name,
+    identifier: name || `#${index + 1}`,
+    apiKeyPreview: previewApiKey,
+    apiKey: null,
+    authIndex: config.authIndex ?? null,
+    baseUrl: config.baseUrl ?? null,
+    proxyUrl: null,
+    prefix: config.prefix ?? null,
+    modelCount: config.models?.length ?? 0,
+    models: collectModelNames(config.models),
+    priority: normalizePriority(config.priority),
+    headerCount: countHeaders(config.headers),
+    excludedModelCount: 0,
+    apiKeyEntryCount: config.apiKeyEntries?.length ?? 0,
+    disabled: config.disabled === true,
+    flags: {},
+    selector: { brand: 'qoder', name, index },
+    raw: config,
+  };
+}

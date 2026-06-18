@@ -1480,7 +1480,8 @@
       "codex": "Codex",
       "claude": "Claude",
       "vertex": "Vertex",
-      "openaiCompatibility": "OpenAI 相容"
+      "openaiCompatibility": "OpenAI 相容",
+      "qoder": "Qoder"
     },
     "table": {
       "key": "金鑰",

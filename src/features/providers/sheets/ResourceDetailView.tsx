@@ -34,7 +34,7 @@ export function ResourceDetailView({ resource, usageByProvider }: ResourceDetail
   ];
 
   const openaiConfig =
-    resource.brand === 'openaiCompatibility'
+    resource.brand === 'openaiCompatibility' || resource.brand === 'qoder'
       ? (resource.raw as OpenAIProviderConfig)
       : null;
   const apiKeyEntries = openaiConfig?.apiKeyEntries ?? [];
