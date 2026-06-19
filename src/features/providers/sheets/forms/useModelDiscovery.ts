@@ -10,6 +10,7 @@ export const MODEL_DISCOVERY_BRANDS: ReadonlyArray<ProviderBrand> = [
   'codex',
   'claude',
   'openaiCompatibility',
+  'qoder',
 ];
 
 export const isModelDiscoveryBrand = (brand: ProviderBrand): boolean =>
@@ -76,7 +77,7 @@ export function useModelDiscovery(args: UseModelDiscoveryArgs): UseModelDiscover
           baseHeaders,
           resolvedAuthIndex
         );
-      } else if (brand === 'openaiCompatibility') {
+      } else if (brand === 'openaiCompatibility' || brand === 'qoder') {
         const firstEntry = (apiKeyEntries ?? []).find(
           (e) =>
             (e.apiKey ?? '').trim() || (e.existingApiKey ?? '').trim() || (e.authIndex ?? '').trim()
@@ -84,21 +85,25 @@ export function useModelDiscovery(args: UseModelDiscoveryArgs): UseModelDiscover
         const entryKey =
           (firstEntry?.apiKey ?? '').trim() || (firstEntry?.existingApiKey ?? '').trim();
         const entryAuthIndex = (firstEntry?.authIndex ?? '').trim() || resolvedAuthIndex;
-        try {
-          next = await modelsApi.fetchModelsViaApiCall(
-            baseUrl,
-            entryKey,
-            baseHeaders,
-            entryAuthIndex
-          );
-        } catch (firstErr) {
-          // Some OpenAI-compatible endpoints expose /models without auth, or
-          // reject the configured key for the discovery route. Retry once
-          // without any auth/headers before surfacing the original error.
+        if (brand === 'qoder') {
+          next = await modelsApi.fetchQoderModelsViaManagement(entryKey, entryAuthIndex);
+        } else {
           try {
-            next = await modelsApi.fetchModelsViaApiCall(baseUrl);
-          } catch {
-            throw firstErr;
+            next = await modelsApi.fetchModelsViaApiCall(
+              baseUrl,
+              entryKey,
+              baseHeaders,
+              entryAuthIndex
+            );
+          } catch (firstErr) {
+            // Some OpenAI-compatible endpoints expose /models without auth, or
+            // reject the configured key for the discovery route. Retry once
+            // without any auth/headers before surfacing the original error.
+            try {
+              next = await modelsApi.fetchModelsViaApiCall(baseUrl);
+            } catch {
+              throw firstErr;
+            }
           }
         }
       }

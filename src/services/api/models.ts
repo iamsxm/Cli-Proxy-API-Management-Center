@@ -6,6 +6,7 @@ import axios from 'axios';
 import { normalizeModelList } from '@/utils/models';
 import { normalizeApiBase } from '@/utils/connection';
 import { apiCallApi, getApiCallErrorMessage } from './apiCall';
+import { apiClient } from './client';
 import { isRecord } from '@/utils/helpers';
 
 const DEFAULT_CLAUDE_BASE_URL = 'https://api.anthropic.com';
@@ -13,6 +14,7 @@ const DEFAULT_GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com';
 const DEFAULT_ANTHROPIC_VERSION = '2023-06-01';
 const CLAUDE_MODELS_IN_FLIGHT = new Map<string, Promise<ReturnType<typeof normalizeModelList>>>();
 const GEMINI_MODELS_IN_FLIGHT = new Map<string, Promise<ReturnType<typeof normalizeModelList>>>();
+const QODER_MODELS_IN_FLIGHT = new Map<string, Promise<ReturnType<typeof normalizeModelList>>>();
 
 const buildRequestSignature = (
   url: string,
@@ -188,6 +190,33 @@ export const modelsApi = {
 
   buildGeminiModelsEndpoint(baseUrl: string) {
     return buildGeminiModelsEndpoint(baseUrl);
+  },
+
+  /**
+   * Fetch Qoder models through CLIProxyAPI's native Qoder management endpoint.
+   * Qoder uses PAT + COSY signing, so it cannot reuse generic OpenAI-compatible /models probing.
+   */
+  async fetchQoderModelsViaManagement(apiKey?: string, authIndex?: string) {
+    const trimmedApiKey = String(apiKey ?? '').trim();
+    const trimmedAuthIndex = authIndex?.trim() || undefined;
+    const signature = `${trimmedApiKey ? 'key' : ''}||auth=${trimmedAuthIndex ?? ''}`;
+    const existing = QODER_MODELS_IN_FLIGHT.get(signature);
+    if (existing) return existing;
+
+    const request = (async () => {
+      const response = await apiClient.post('/qoder/models', {
+        apiKey: trimmedApiKey || undefined,
+        authIndex: trimmedAuthIndex
+      });
+      return normalizeModelList(response, { dedupe: true });
+    })();
+
+    QODER_MODELS_IN_FLIGHT.set(signature, request);
+    try {
+      return await request;
+    } finally {
+      QODER_MODELS_IN_FLIGHT.delete(signature);
+    }
   },
 
   /**
